@@ -1,0 +1,240 @@
+{
+  "name": "HIV",
+  "remarks": [
+    "A blank module"
+  ],
+  "states": {
+    "Initial": {
+      "type": "Initial",
+      "direct_transition": "WAIT UNTIL 15 YEARS OLD"
+    },
+    "Determine_Condition": {
+      "type": "Simple",
+      "lookup_table_transition": [
+        {
+          "default_probability": 0.5,
+          "lookup_table_name": "hiv_data.csv",
+          "transition": "HIV_Positive"
+        },
+        {
+          "default_probability": 0.5,
+          "lookup_table_name": "hiv_data.csv",
+          "transition": "HIV_Test_Negative"
+        }
+      ],
+      "remarks": [
+        "Describing that module"
+      ]
+    },
+    "Terminal": {
+      "type": "Terminal"
+    },
+    "HIV_Test_Negative": {
+      "type": "DiagnosticReport",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "75622-1",
+          "display": "HIV types 1 and 2 testing"
+        }
+      ],
+      "observations": [
+        {
+          "category": "laboratory",
+          "unit": "",
+          "codes": [
+            {
+              "system": "LOINC",
+              "code": "75622-1",
+              "display": "LOINC Code",
+              "value_set": "2.16.840.1.113762.1.4.1056.50"
+            }
+          ],
+          "value_code": {
+            "system": "SNOMED-CT",
+            "code": 165815009,
+            "display": "HIV Negative"
+          }
+        }
+      ],
+      "direct_transition": "Terminal",
+      "remarks": [
+        "HIV Negative"
+      ]
+    },
+    "ON_ART": {
+      "type": "Observation",
+      "category": "vital-signs",
+      "unit": "",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "45260-7",
+          "display": "Patient is on ART"
+        }
+      ],
+      "distribution": {
+        "kind": "EXACT",
+        "parameters": {
+          "value": 1
+        }
+      },
+      "lookup_table_transition": [
+        {
+          "transition": "VLS",
+          "default_probability": 1,
+          "lookup_table_name": "VLS.csv"
+        }
+      ]
+    },
+    "NOT_ART": {
+      "type": "CarePlanEnd",
+      "direct_transition": "Terminal",
+      "referenced_by_attribute": ""
+    },
+    "VLS": {
+      "type": "DiagnosticReport",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "25836-8",
+          "display": "viral load suppression"
+        }
+      ],
+      "observations": [
+        {
+          "category": "laboratory",
+          "unit": "copies/mL",
+          "codes": [
+            {
+              "system": "LOINC",
+              "code": "25836-8",
+              "display": "VLS"
+            }
+          ],
+          "range": {
+            "low": 200,
+            "high": 1000000
+          }
+        }
+      ],
+      "direct_transition": "Terminal",
+      "remarks": [
+        "HIV 1 RNA NAA+probe (Specimen)"
+      ]
+    },
+    "HIV_Positive": {
+      "type": "DiagnosticReport",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "75622-1",
+          "display": "HIV types 1 and 2 testing"
+        }
+      ],
+      "observations": [
+        {
+          "category": "laboratory",
+          "unit": "",
+          "codes": [
+            {
+              "system": "LOINC",
+              "code": "75622-1",
+              "display": "LOINC Code",
+              "value_set": ""
+            }
+          ],
+          "value_code": {
+            "system": "SNOMED-CT",
+            "code": 165816005,
+            "display": "HIV Positive"
+          }
+        }
+      ],
+      "remarks": [
+        "HIV Positive"
+      ],
+      "direct_transition": "ENCOUNTER"
+    },
+    "Knowing status as positive": {
+      "type": "Observation",
+      "category": "vital-signs",
+      "unit": "",
+      "codes": [
+        {
+          "system": "LOINC",
+          "code": "68961-2",
+          "display": "known as positive"
+        }
+      ],
+      "distribution": {
+        "kind": "EXACT",
+        "round": false,
+        "parameters": {
+          "value": 1
+        }
+      },
+      "direct_transition": "encounter again"
+    },
+    "WAIT UNTIL 15 YEARS OLD": {
+      "type": "Guard",
+      "allow": {
+        "condition_type": "Age",
+        "operator": ">=",
+        "quantity": 15,
+        "unit": "years",
+        "value": 0
+      },
+      "direct_transition": "delay"
+    },
+    "ENCOUNTER": {
+      "type": "Encounter",
+      "wellness": true,
+      "direct_transition": "determine_status"
+    },
+    "delay": {
+      "type": "Delay",
+      "distribution": {
+        "kind": "UNIFORM",
+        "parameters": {
+          "high": 49,
+          "low": 0
+        }
+      },
+      "unit": "years",
+      "direct_transition": "Determine_Condition"
+    },
+    "determine_status": {
+      "type": "Simple",
+      "lookup_table_transition": [
+        {
+          "transition": "Knowing status as positive",
+          "default_probability": 1,
+          "lookup_table_name": "Knowing status as positive.csv"
+        }
+      ]
+    },
+    "encounter again": {
+      "type": "Encounter",
+      "reason": "",
+      "wellness": true,
+      "direct_transition": "determine treatment"
+    },
+    "determine treatment": {
+      "type": "Simple",
+      "lookup_table_transition": [
+        {
+          "transition": "ON_ART",
+          "default_probability": 0.8,
+          "lookup_table_name": "ART.csv"
+        },
+        {
+          "transition": "NOT_ART",
+          "default_probability": 0.19999999999999996,
+          "lookup_table_name": "ART.csv"
+        }
+      ]
+    }
+  },
+  "gmf_version": 2
+}
